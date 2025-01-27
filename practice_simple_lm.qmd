@@ -1,10 +1,10 @@
 ---
 title: "Practice: Simple Linear Regression"
 author: 
-  - "Student Name"
+  - "Selena Buttery"
   - "DS303, SP25"
   - "Prof. Amber Camp"
-date: 1/17/25
+date: 1/20/25
 format: html
 editor: visual
 theme: spacelab
@@ -34,7 +34,7 @@ What is the difference between *y* = *b~0~* + *b~1~x* and *y* = *mx* + *b*, and 
 
 #### Answer:
 
-(write your answer here)
+The main difference that i read about and researched was that basically in the equation *y* = *b~0~* + *b~1~x,* it is used more in context. So with statistics more than just basic algebra or geometry. The y=mx + b is mainly used when dealing with basic geometry problems that are linear.
 
 ### Question 2
 
@@ -42,7 +42,13 @@ Think back to our class discussion and your previous studies in math. Tell me be
 
 #### Answer:
 
-(write your answer here)
+*b*~0 = y intercept~
+
+*b*~1 = slope~
+
+x = independent variable
+
+y = dependent variable
 
 ## Let's try it
 
@@ -68,6 +74,10 @@ You can just call upon the data (it's already in the package). I'll get you star
 ```{r}
 head(Boston)
 
+summary(Boston)
+
+hist(Boston$medv, breaks = 20, col = "blue", main = "Distribution of Median House Value", xlab = "medv")
+boxplot(Boston$medv, main = "Boxplot of Median House Value", ylab = "medv")
 ```
 
 We learned in class that we can apply a simple linear regression using `lm`. Here is the basic format:
@@ -81,13 +91,13 @@ model <- lm(y ~ x, data=df)
 Use the above basic format to create a linear regression model to predict the **median home value** (medv) based on the **percentage of lower status population** (lstat), using the data from the 'Boston' dataset. Assign it to the variable `lm.model`.
 
 ```{r}
-
+lm.model <- lm(medv ~ lstat, data = Boston)
 ```
 
 If you set it up right, you should be able to run your model name in the below code chunk and view the basic model output. Give it a try:
 
 ```{r}
-
+lm.model
 ```
 
 ### Question 5
@@ -96,7 +106,7 @@ What is your model output telling you?
 
 #### Answer
 
-(write your answer here)
+The output is telling me that the y-intercept is 34.55 which means that this is the predicted value of medv when lstat is 0. In this example it would mean that if there was a 0% lower-status population then the median value of a home would be \$34,550. Since the slope is -.95, this tells us that for each 0.01 increase in lower-status population, the median home value would decrease by \$950.
 
 You can also try `summary(lm.model)`.
 
@@ -110,7 +120,7 @@ What additional information do you get from this summary of the model output?
 
 #### Answer
 
-(write your answer here)
+We get the five number summary of the residuals which are the min, first quartile, median, third quartile, and max. We can also see the residual standard error (RSE) which is explained as the average difference of the observed value from the regression line. We can also see R\^2 which means approximately 54.41% of the variability in medv is explained by lstat. And lastly there is the F statistic which tests whether the model is statistically significant overall.
 
 ## confint() and predict()
 
@@ -130,23 +140,45 @@ What do you think the above `confint()` and `predict()` information means? It's 
 
 #### Answer
 
-(write your answer here)
+I think that for the intercept (33.44 - 35.65) it is telling us that when lstat = 0 then the expected medv value is approx between 33.44 and 35.65. I believe that for the Confint() information it is focused on the prediction based on the 95% confidence and it shows the predicted medv with the lower and upper bounds. And then for the prediction it is showing the variability in the individual outcomes that is why we see a more broad range I believe.
 
-## Visualizing
-
-Here is a simple base R way to plot this data:
-
-```{r}
-plot(Boston$lstat, Boston$medv)
-abline(lm.model)
-```
-
-### Question 8
+## Visualizing Question 8
 
 Can you convert the above code chunk to `ggplot`? Try below. Have fun with editing the appearance of your plot if you'd like :)
 
 ```{r}
+library(ggplot2)
 
+confidence_preds <- predict(lm.model, data.frame(lstat = c(5, 10, 15)), interval = "confidence")
+prediction_preds <- predict(lm.model, data.frame(lstat = c(5, 10, 15)), interval = "prediction")
+
+
+lstat_values <- c(5, 10, 15)
+data <- data.frame(
+  lstat = rep(lstat_values, 2),
+  fit = c(confidence_preds[, "fit"], prediction_preds[, "fit"]),
+  lwr = c(confidence_preds[, "lwr"], prediction_preds[, "lwr"]),
+  upr = c(confidence_preds[, "upr"], prediction_preds[, "upr"]),
+  type = rep(c("Confidence", "Prediction"), each = length(lstat_values))
+)
+
+library(ggplot2)
+ggplot(data, aes(x = factor(lstat), y = fit, fill = type)) +
+  geom_col(position = "dodge", alpha = 0.7) + # Bars for predictions
+  labs(
+    title = "Confidence and Prediction Intervals",
+    x = "LSTAT",
+    y = "Predicted MEDV",
+    fill = "Interval Type"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+```
+
+```         
 ```
 
 In a future class, we'll explore some diagnostic plots and what that means for evaluating models. For now, just run the below and have a look:
@@ -172,7 +204,11 @@ What variables are you interested in exploring using a linear regression? Just p
 
 #### Answer
 
-(write your answer here)
+X = Age (proportion of owner-occupied units built before 1940s
+
+Y = Lstat (percentage of households with low socioeconomic status)
+
+Question: Does the proportion of older homes in a neighborhood correlate with the percentage of households with low socioeconomic status?
 
 ### Question 10
 
@@ -181,10 +217,19 @@ What variables are you interested in exploring using a linear regression? Just p
 Build and run your model, examine the model output:
 
 ```{r}
+model_practice <- lm(lstat ~ age, data = Boston)
+```
 
+```{r}
+model_practice
 
+summary(model_practice)
+```
 
-
+```{r}
+confint(model_practice)
+predict(model_practice, data.frame(age = c(20, 50, 80)), interval = "confidence")
+predict(model_practice, data.frame(age = c(20, 50, 80)), interval = "prediction")
 ```
 
 #### Part 2
@@ -193,7 +238,7 @@ Explain what you found in plain English. Do your best.
 
 #### Answer
 
-(write your answer here)
+What I have found is that typically older neighborhoods tend to have a higher percentage of lower socioeconomic households, but there is significant variation among individual households. I found out the first part by taking the information and seeing that for every 1% increase in older homes, lstat increases by 0.14 to 0.17 on average.
 
 ## The end!
 
