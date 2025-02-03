@@ -120,7 +120,7 @@ What additional information do you get from this summary of the model output?
 
 #### Answer
 
-We get the five number summary of the residuals which are the min, first quartile, median, third quartile, and max. We can also see the residual standard error (RSE) which is explained as the average difference of the observed value from the regression line. We also see the standard error which is for every increase in lstat. We can also see R\^2 which means approximately 54.41% of the variability in medv is explained by lstat. And lastly there is the F statistic which tests whether the model is statistically significant overall. We also can see the p-value which is very low according to the summary results which means that the probability of the observed data is statistically significant. Overall this output shows us that this is a good model and lstat predicts medv.
+We get the five number summary of the residuals which are the min, first quartile, median, third quartile, and max. We can also see the residual standard error (RSE) which is explained as the average difference of the observed value from the regression line. We can also see that for every increase in lstat, medv goes down by 0.95 as shown under the estimate for lstat. We can also see R\^2 which means approximately 54.41% of the variability in medv is explained by lstat. And lastly there is the F statistic which tests whether the model is statistically significant overall. We also can see the p-value which is very low according to the summary results which means that the probability of the observed data is statistically significant. Overall this output shows us that this is a good model and lstat predicts medv.
 
 ## confint() and predict()
 
@@ -243,3 +243,14 @@ What I have found is that typically older neighborhoods tend to have a higher pe
 ## The end!
 
 That's it for now. Please feel free to raise questions in class or via email!
+
+### Feb 3 Classwork
+
+Create a multiple regression model that includes an interaction term and explain the model output in plain language below. Save, commit, and push to GitHub when done.
+
+```{r}
+lm.class <- lm(medv ~ age * crim, data = Boston)
+summary(lm.class)
+```
+
+This is telling us that when age = 0, then medv is decreasing by 0.09 and when crim = 0, medv is decreasing by 1.16. And then when both age and crim =0 then medv increases by .009. This model is statistically significant according to our p values as well.
