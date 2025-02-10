@@ -1,7 +1,7 @@
 ---
 title: "Qualitative Predictors"
 author: 
-  - "Student Name"
+  - "Selena Buttery"
   - "DS303, SP25"
   - "Prof. Amber Camp"
 date: 2/7/25
@@ -10,7 +10,7 @@ editor: visual
 theme: spacelab
 ---
 
-## Qualitative Predictors
+## Qualitative Predictors 
 
 So far, we have used the `Boston` data to explore variables that are all numerical/quantitative. In this document, we will examine data that is qualitative in nature.
 
@@ -77,7 +77,7 @@ contrasts(carseats$ShelveLoc)
 
 Here is how to interpret that matrix.
 
--    `R` has created a `ShelveLocGood` dummy variable that takes on a value of 1 if the shelving location is **good**, and 0 otherwise.
+-   `R` has created a `ShelveLocGood` dummy variable that takes on a value of 1 if the shelving location is **good**, and 0 otherwise.
 
 -   It has also created a `ShelveLocMedium` dummy variable that equals 1 if the shelving location is **medium**, and 0 otherwise.
 
@@ -148,26 +148,28 @@ ggplot(data.frame(residuals = residuals), aes(sample = residuals)) +
 Below, fit a linear regression model to predict `Price` based on `ShelveLoc`. I'll leave it to you to recall the syntax and build your model.
 
 ```{r}
-lm.price <- lm()
+lm.price <- lm(Price ~ ShelveLoc, data = carseats)
 summary(lm.price)
 ```
 
 Create a boxplot or violin plot to aid in your interpretation, and write in your interpretation below.
 
 ```{r}
-# boxplot here
+ggplot(carseats, aes(x = ShelveLoc, y = Price)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", color = "pink", size = 2) 
 ```
 
 #### Interpretation of `lm.price`
 
-(Write answer here)
+When looking at the output, we can see that the p values are fairly high for shelvelocgood and shelvelocmedium. This makes the model not statistically significant. This means there is no strong evidence that shelving location has a meaningful impact on price. We expected that better shelving location would have an impact on price, but the data just doesn't provide strong significant evidence for this statement. This mean that other factors are probably better at determining the effect on shelving location.
 
 ### Predict Sales using all variables
 
 Below, fit a linear regression model to predict `Sales` that includes ALL variables as well as a few interaction terms of your choice.
 
 ```{r}
-lm.carseats <- lm()
+lm.carseats <- lm(Sales ~ ., data = carseats)
 summary(lm.carseats)
 
 ```
@@ -176,10 +178,16 @@ summary(lm.carseats)
 
 Provide a summary of the model output, including key coefficients and their significance levels. Discuss which variables are statistically significant predictors of `Sales`.
 
-(Write answer here)
+The first thing I focused on when looking at all the variables was their p values to see if they were statistcally significant. The ones that were statistically significant include CompPrice, Income, Advertising, Price, ShelveLocGood, ShelveLocMedium, and Age. We can also see that this model explains 87.34% of the variability in Sales, implying a strong fit based off of the r-squared. Some key takeaways include:
 
-#### Practical implications
+-   Sales decrease as Price increases by -0.95
+
+-   Advertising has a positive impact on sales, as it increases, sales go up .123
+
+-   A good shelving location leads to sales increasing by 4.85 and a medium location still helps increase by 1.96.
+
+Practical implications
 
 Discuss the practical implications of your findings. How can this model inform business decisions regarding pricing, advertising, or product placement, etc?
 
-(Write your answer here)
+-   This model can inform business decisions regarding pricing by knowing that higher prices reduce sales, but competitor prices increase the sales. With advertising, we can see that increasing advertising significantly helps to boost sales which would help a business to know that investing in marketing is worth it. From our model we can see that product placement is important and better shelf locations strongly increase sales. This can also help a business to see that urban/rural locations are not significant and don't need to be focused on as much as focusing on pricing, advertising, and product placement.
