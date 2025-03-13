@@ -1,0 +1,324 @@
+---
+title: "Vowel Analysis Final Report"
+author: 
+  - "Selena Buttery"
+  - "DS303, SP25"
+  - "Prof. Amber Camp"
+date: 3/14/25
+format: html
+toc: true
+editor: visual
+theme: spacelab
+---
+
+## Vowel Analysis Final Report
+
+### Load packages
+
+```{r, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(Matrix)
+
+library(phonR)
+```
+
+## Load data
+
+Load your personal data (make sure you update from P101 -\> your P#)
+
+```{r}
+# read in data
+P105 <- read_csv("data/P105.csv")
+
+# convert variables to factor where needed
+convert_to_factor <- function(df, cols) {
+  df[cols] <- lapply(df[cols], as.factor)
+  return(df)
+}
+
+P105 <- convert_to_factor(P101, c("ppt", "word", "ipa", "arpa", "onset", "offset", "environment", "real_word", "sex", "ethnicity", "birthplace", "home_state", "years_lived_hi", "L1", "exposure_langs_yn", "exposure_langs", "speak_other", "item_num", "rep"))
+
+# remove a couple words you won't be needing
+P105 <- P105 %>%
+  dplyr::filter(!word %in% c("cot", "caught")) # added dplyr to specify which 'filter' to use
+
+```
+
+Class data:
+
+```{r}
+# read in data
+all_data <- read_csv("data/DS303_combined.csv")
+
+# convert variables to factor where needed
+all_data <- convert_to_factor(all_data, c("ppt", "word", "ipa", "arpa", "onset", "offset", "environment", "real_word", "sex", "ethnicity", "birthplace", "home_state", "years_lived_hi", "L1", "exposure_langs_yn", "exposure_langs", "speak_other", "item_num", "rep"))
+
+# remove a couple words you won't be needing
+all_data <- all_data %>%
+  dplyr::filter(!word %in% c("cot", "caught"))
+
+```
+
+## Explain the Data
+
+(1 point)
+
+-   The data comes from a series of speech recordings that were collected from participants who read aloud various words. The focus was on vowel production. The dataset includes a range of linguistic and demographic variables which helps us to analyze how different factors influence vowel articulation. The dataset contains multiple observations per participant which captures repeated instances of the same words to access consistency and variability in pronunciation. Each observation includes details on the spoken word, it characteristics with phonics, and the speaker's background including sex, age, ethnicity, first language, etc... The dataset also includes other measurements such as pitch (f0) and vowel duration. Also, the words are categorized by their real-world status and phonetic transcription using both IPA and ARPAbet notations. Before analysis, some pre-processing steps were taken to ensure data quality. Words that were mispronounced were removed prior to distribution and additional filtering was applied to exclude words "cot" and "caught" because they were not relevant to the study. Also, outliers were removed from the dataset based on standardized acoustic measurements.
+
+## Variables of Interest
+
+(1 point)
+
+For this project, you will explore and analyze the [**class-wide data set**]{.underline}. In paragraph form:
+
+The purpose of this project is to explore vowel production patterns within a class-wide dataset, focusing on how various linguistic and demographic factors may influence vowel articulation. The primary variables of interest in this study include f1 (the first formant) and f2 (the second formant). I will be mainly focusing on years_lived which is the years lived in Hawaii. This will allow for comparisons between speakers with carrying levels of exposure to the linguistic environment in Hawaii. My research questions include: 1. Does the number of years a speaker has lived in Hawaii influence vowel formants? 2. Are there systematic shifts in vowel height or frontness based on prolonged exposure to the Hawaiian linguistic environment?
+
+My hypothesis is that individuals who have lived in Hawaii for longer periods may show vowel shifts that reflect regional speech characteristics potentially lowering or fronting certain vowels due to linguistic influences in the area.
+
+## EDA and Vowel Plots
+
+(3 points)
+
+-   I see some differences between the whole class dataset and my specific one. My i vowel sound seems to be more to the left than the average of the class. Everything seems a bit more spread out on mine than when looking at the class data that is all jumbled together a bit. Out class data had some outliers that we fixed early on, but mine didn't really appear to have any.
+
+### My own Data Plot:
+
+```{r}
+P105_clean <- P105 %>%
+  group_by(ipa) %>% 
+  mutate(
+    f1_z = (f1 - mean(f1)) / sd(f1), 
+    f2_z = (f2 - mean(f2)) / sd(f2)
+  ) %>%
+  filter(abs(f1_z) <= 5, abs(f2_z) <= 3)  
+
+with(P105_clean, plotVowels(f1, f2, ipa, plot.tokens = TRUE, pch.tokens = ipa, cex.tokens = 1.2, alpha.tokens = 0.2, plot.means = TRUE, pch.means = ipa, cex.means = 2, var.col.by = ipa, ellipse.line = TRUE, pretty = TRUE))
+```
+
+### Class Data Vowel Plot:
+
+```{r}
+all_clean <- all_data %>%
+  group_by(ppt, ipa) %>% 
+  mutate(
+    f1_z = (f1 - mean(f1)) / sd(f1),
+    f2_z = (f2 - mean(f2)) / sd(f2)
+  ) %>%
+  filter(abs(f1_z) <= 1.25, abs(f2_z) <= 1.25)
+
+
+with(all_clean, plotVowels(f1, f2, ipa, plot.tokens = TRUE, pch.tokens = ipa, cex.tokens = 1.2, alpha.tokens = 0.2, plot.means = TRUE, pch.means = ipa, cex.means = 2, var.col.by = ipa, ellipse.line = TRUE, pretty = TRUE))
+```
+
+### My model (explain and justify hypothesis)
+
+```{r}
+ggplot(P105_clean, aes(x = years_lived_hi, y = f1, color = ipa)) +
+  geom_point(alpha = 0.6, size = 2) 
+  labs(title = "F1 Variation by Years Lived in Hawaii (Individual Data)",
+       x = "Years Lived in Hawaii",
+       y = "F1 (Hz)",
+       color = "Vowel IPA") +
+  theme(legend.position = "bottom")
+
+# Scatter plot for F2 with smooth trend line
+ggplot(P105_clean, aes(x = years_lived_hi, y = f2, color = ipa)) +
+  geom_point(alpha = 0.6, size = 2)
+  labs(title = "F2 Variation by Years Lived in Hawaii (Individual Data)",
+       x = "Years Lived in Hawaii",
+       y = "F2 (Hz)",
+       color = "Vowel IPA") +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+ggplot(all_clean, aes(x = years_lived_hi, y = f1, color = ipa)) +
+  geom_jitter(alpha = 0.4, size = 1, width = 0.2, height = 0)
+  labs(x = "Years Lived in Hawaii",
+       y = "F1 (Hz)",
+       color = "Vowel IPA") +
+  theme(legend.position = "bottom")
+
+ggplot(all_clean, aes(x = years_lived_hi, y = f2, color = ipa)) +
+  geom_jitter(alpha = 0.4, size = 1, width = 0.2, height = 0)
+  labs(x = "Years Lived in Hawaii",
+       y = "F2 (Hz)",
+       color = "Vowel IPA") +
+  theme(legend.position = "bottom")
+```
+
+## Model Selection and Justification
+
+(3 points)
+
+-   You will build and analyze **two different statistical models** to investigate the relationship between your predictors and outcome variable
+
+-   The two models should differ in some way (e.g., one could include an additional or interaction term while the other does not)
+
+-   What statistical models will you use to investigate the relationship between your predictors and outcome variable? (linear vs. logistic regression? mixed effects model?)
+
+-   Why did you select these models?
+
+-   Which variable(s) are included?
+
+    I will be investigating the relationship between years lived in Hawaii and the formant frequencies F1 and F2. I will use two different statistical models to explore how the numbers of years lived in Hawaii might impact these vowels formats. I chose linear regression to assess the relationship between the number of years lived in Hawaii and the format frequencies. I chose linear regression because it is common in predicting a continuous outcome based on one or more predictors. The model will be F1 \~ years_lived_hi + ipa, this model will predict F1 based on the number of years lived in Hawaii and will also include the vowel IPA symbol as a factor to account for these differences in vowels. The variables included are Years Lived in Hawaii and IPA. The second model I will use is the mixed effects model. I picked this one because it can account for repeated measurements from the same speakers. I will include ppt as a random effect to help model individual variability in formants and improve model accuracy. The variables included are Years Lived in Hawaii, IPA, and ppt.
+
+## Model Comparisons and Best Fit
+
+(3 points)
+
+-   Build and run both models and display their summaries
+
+-   Compare the two models, assess model fit, and determine the better fitting one
+
+### Model 1: Linear Regression Model w/f1
+
+```{r}
+all_clean$years_lived_hi <- relevel(all_clean$years_lived_hi, ref = "Lifetime")
+```
+
+```{r}
+linear <- lm(f1 ~ years_lived_hi + ipa, data = all_clean)
+summary(linear)
+```
+
+### Model 2: Mixed Effects Model with f1
+
+```{r}
+mixed_model <- lmer(f1 ~ years_lived_hi + ipa + (1 | ppt), data = all_clean)
+
+summary(mixed_model)
+```
+
+### Comparison of Model 1 and 2 with f1
+
+```{r}
+anova(mixed_model, linear)
+
+```
+
+### Model 3: Linear (f2)
+
+```{r}
+linearf2 <- lm(f2 ~ years_lived_hi + ipa, data = all_clean)
+summary(linear)
+```
+
+### Model 4 : Mixed Effects(f2)
+
+```{r}
+mixed_modelf2 <- lmer(f2 ~ years_lived_hi + (1 | ppt), data = all_clean)
+
+summary(mixed_modelf2)
+```
+
+### Comparison of F2 models
+
+```{r}
+anova(mixed_modelf2, linearf2)
+```
+
+## **Interpretation of Results**
+
+#### Model 1 interpretation:
+
+Intercept = 649.41
+
+I made sure the reference variable was Lifetime in Hawaii so that we can see the comparisons of people who have always lived in Hawaii to others. 649.41 is the predicted f1 value for someone who has lived in Hawaii for a lifetime and pronounces the reference IPA vowel.
+
+0-5 years lived in Hawaii: 64.98
+
+This means that people have lived in Hawaii for 0-5 years tend to have higher f1 values than lifetime residents since it is positive. The p-value also suggests statistical significance.
+
+6-10 years lived in Hawaii: 70.31
+
+This means that people who lived in Hawaii for 6-10 years have a slightly higher f1 values than 0-5 years lived in Hawaii and more than lifetime residents as well.
+
+11-20 years lived in Hawaii: 142.01
+
+This means this group pronounces vowels with a significantly higher f1 than lifetime residents and the highest out of all groups.
+
+So overall, this model shows that people who live in Hawaii longer tend to have lower f1 values with the biggest drop for lifetime residents.
+
+#### Model 2 Interpretation:
+
+Intercept: 652.901
+
+The intercept represents the predicted f1 value for a person who has lived in Hawaii their entire life and uses the reference vowel.
+
+0-5 years lived in Hawaii: 58.94
+
+This coefficient shows that compared to people who have lived in Hawaii for their lifetime those who have lived in Hawaii for 0-5 years tend to have a f1 value that is 58.94 units higher, although this is not statistically significant according to the high p-value: .230.
+
+6-10 years lived in Hawaii: 69.277
+
+People who have lived in Hawaii for 6-10 years have an f1 value 69.277 units higher than lifetime residents, but this is also not statistically significant with a p-value of .403.
+
+11-20 years lived in Hawaii: 140.649
+
+This is not statistically significant with a high p value of .111.
+
+#### Comparison of Model 1 and Model 2 (F1)
+
+This comparison shows the Model 2 (mixed effects model) is better than the linear model which shoes that including random effects accounts for the variability across people which results in a better fit of the data.
+
+#### Model 3 Interpretation (f2)
+
+Intercept: 649.410
+
+This is the baseline f2 value for individuals who have lived in Hawaii for their lifetime.
+
+0-5 years lived in Hawaii: 64.984
+
+People who have lived in Hawaii for 0-5 years have an f2 value approximately 64.98 units higher than someone who has lived in Hawaii for their lifetime, this is statistically significant according to the p-value (2e-16).
+
+6-10 years lived in Hawaii: 70.312
+
+People who have lived in Hawaii for 6-10 years have an f2 value that is about 70.31 units higher than people who have lived in Hawaii for a lifetime and this is statistically significant.
+
+11-20 years in Hawaii: 142.10
+
+People who have lived in Hawaii for 11-20 years have an f2 value that is about 142.10 units higher than people who have lived in Hawaii for a lifetime and this is statistically significant.
+
+#### Model 4 Interpretation (f2)
+
+Intercept: 1517.171
+
+The base value for f2 for people who have lived in Hawaii for their lifetime is 1517 when considering the random effect of participants (ppt). This is significant.
+
+0-5 years lived in Hawaii: 128.025
+
+This value is not statistically significant with a p-value of .1810
+
+6-10 years lived in Hawaii: -85.952
+
+People who have lived in Hawaii for 6-10 years have an expected decrease of 85.95 units in f2 compared to people who spend their lifetime in Hawaii. This is not significant though.
+
+11-20 years in Hawaii: 412.405
+
+People who have lived in Hawaii for 11-20 years have about 412.405 units higher in f2 than people who lived in Hawaii for their lifetime, this is statistically significant according to the p-value (.02).
+
+#### Interpretation of Comparison (F2)
+
+The mixed effects model shows a better fit according to the p-values and significance, accounting for random effects improves the model. This suggests that there is variability across participants that is better captured by including random effects rather than assuming that the relationship between f2 and years lived in Hawaii is the same for everyone.
+
+## Discussion and Conclusion
+
+(3 points)
+
+Overall I performed linear models and mixed effect models to predict the outcomes of variables f1 and f2 based on years lived in Hawaii. We saw that the mixed effect models significantly did better than the linear model when compared with each other. The findings suggest that both years lived in Hawaii and the ipa variants significantly impact the outcome variable which implicates some cultural or environmental influences on speech. When comparing the two models (linear and mixed effects) this helped me to see that it is important to account for participant level variability because ignoring the random effects/differences between participants could lead to biased or less accurate results. I did have some findings regarding the ipa categories which could mean that language variations or cultural differences may have distinct impacts on outcomes.
+
+Limitations:
+
+-   We didn't have a big sample size and so this may have limited our data.
+
+-   We had significantly less girls in the class and so this may be gender biased as we had many more males complete the voicing.
+
+Conclusion:
+
+In the end we found that the mixed effects model proved to be better for this dataset because it accounted for participant variability leading to a better fit. The key findings were that both years lived in Hawaii and ipa variants significantly impact the outcome variable f1 and f2. Future research should aim to address the limitations related to data constraints and sample size to build on these findings.
