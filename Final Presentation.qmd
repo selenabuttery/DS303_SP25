@@ -1,0 +1,140 @@
+---
+title: "Final: Student Performance Analysis"
+subtitle: "Analyzing Key Factors That May Affect Student Outcomes"
+author: "Selena Buttery"
+Institute: "Chaminade University"
+date: 4/21/25
+format:
+  revealjs:
+    theme: sky
+editor: visual
+---
+
+## My Question and Why it Matters
+
+-   Research Question: What factors influence students academic performance(Exam_Score)?
+-   Why It Matters: Understanding the variables that impact academic performance helps educators and institutions tailor interventions and support to improve student outcomes. It can also guide policy decisions regarding resource allocation and student support services.
+
+## Dataset and Key Variables
+
+-   **Hours_Studied**: The number of hours a student spends studying.
+-   **Previous_Scores**: Historical academic scores of the student.
+-   **Attendance**: How often the student attends classes.
+-   **Parental_Involvement**: The degree of parental involvement in the student’s academic life.
+-   **School_Type**: The type of school the student attends (e.g., public or private).
+-   **Sleep_Hours**: The number of hours the student sleeps.
+
+## Exploratory Data Analysis (EDA)
+
+```{r, echo = FALSE}
+library(tidyverse)
+library(readr)
+library(janitor)
+library(caret)
+library(ggplot2)
+library(lmtest)
+library(car)
+library(MASS)
+library(lme4)
+library(broom)
+
+student_data <- read_csv("C:/Users/selen/OneDrive/Desktop/DS303_new/DS303_SP25.2/StudentPerformanceFactors.csv")
+
+(student_data)
+```
+
+## Comparing Motivation Level and Exam Scores
+
+```{r}
+ggplot(student_data, aes(x = Motivation_Level, y = Exam_Score, fill = Motivation_Level)) +
+  geom_boxplot() +
+  labs(title = "Exam Score by Motivation Level", x = "Motivation Level", y = "Exam Score") +
+  theme_minimal()
+```
+
+## Scatter plot of Hours Studied vs Exam Score based on Gender
+
+```{r}
+ggplot(student_data, aes(x = Hours_Studied, y = Exam_Score)) +
+  geom_point(aes(color = Gender), size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Relationship Between Hours Studied and Exam Score based on Gender") +
+  theme_minimal()
+```
+
+## Modeling (Linear Regression)
+
+Model 1: Linear Regression (Exam_Score \~ Hours_Studied + Previous_Scores + Attendance + Motivation_Level)
+
+```{r}
+model1 <- lm(Exam_Score ~ Hours_Studied + Previous_Scores + Sleep_Hours + Attendance, data = student_data)
+summary(model1)
+```
+
+## Key Results Model 1
+
+-   **R-squared**: 0.5722 (57.22% of the variance in `Exam_Score` is explained by the model).
+
+    **Significant Predictors**:
+
+-   `Sleep_Hours` is not significant, suggesting that sleep does not have a major direct effect on `Exam_Score` in this model.
+
+-   `Hours_Studied`: Each additional hour studied increases the `Exam_Score` by approximately 0.29 points.
+
+-   `Attendance`: Higher attendance is positively associated with higher scores.
+
+## Modeling (Linear Regression) Pt.II
+
+```{r}
+model2 <- lm(Exam_Score ~ Hours_Studied + Previous_Scores + Motivation_Level + Parental_Involvement + School_Type, data = student_data)
+summary(model2)
+```
+
+## Key Results Model 2
+
+**Significant Predictors**:
+
+-   `Hours_Studied` and `Previous_Scores` remain significant.
+
+-   `School_Type` is not significant.
+
+-   Parental involvement has a strong negative effect on the score, particularly for low to medium involvement, indicating that higher parental involvement may be detrimental in this context.
+
+## Modeling (Linear Regression Pt III.)
+
+```{r}
+model3 <- lm(Exam_Score ~ Hours_Studied + Previous_Scores + Attendance + Motivation_Level, data = student_data)
+summary(model3)
+```
+
+## Key Results Model 3
+
+-   **R-squared**: 0.5809
+
+    **Significant Predictors**:
+
+-   `Hours_Studied`, `Previous_Scores`, and `Motivation_Level` continue to be significant predictors.
+
+-   `Attendance` continues to show a strong positive impact.
+
+## Comparing all 3 Linear Regression Models
+
+```{r}
+anova(model1, model2, model3)
+```
+
+## Conclusion of Anova Model Comparison:
+
+-   The transition from Model 1 to Model 3 (adding Motivation Level and removing Sleep Hours) improved model performance, supporting that Motivation is a more impactful predictor than Sleep Hours.
+
+## Limitations
+
+-   **Data Quality**: The accuracy of self-reported data (`Hours_Studied`, `Motivation_Level`) could be biased.
+
+-   **External Validity**: The results are based on this dataset and may not generalize to all students or educational systems.
+
+## Conclusion
+
+-   **Summary of Findings**: The primary factors influencing students' exam scores are hours studied, previous academic performance, and attendance. Motivation and parental involvement also play roles, but with varying effects depending on the level.
+
+-   **Actionable Insights**: Educational interventions should focus on encouraging students to attend classes regularly and invest time in studying. Additional support may be needed for students with low motivation or those with less parental involvement.
