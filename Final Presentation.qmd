@@ -17,12 +17,12 @@ editor: visual
 
 ## Dataset and Key Variables
 
+-   Dataset from Kaggle
 -   **Hours_Studied**: The number of hours a student spends studying.
--   **Previous_Scores**: Historical academic scores of the student.
 -   **Attendance**: How often the student attends classes.
+-   **Motivation_Level**: Self-reported (low, medium, high)
 -   **Parental_Involvement**: The degree of parental involvement in the student’s academic life.
 -   **School_Type**: The type of school the student attends (e.g., public or private).
--   **Sleep_Hours**: The number of hours the student sleeps.
 
 ## Exploratory Data Analysis (EDA)
 
@@ -52,13 +52,13 @@ ggplot(student_data, aes(x = Motivation_Level, y = Exam_Score, fill = Motivation
   theme_minimal()
 ```
 
-## Scatter plot of Hours Studied vs Exam Score based on Gender
+## Scatter plot of Hours Studied vs Exam Score based on School Type
 
 ```{r}
 ggplot(student_data, aes(x = Hours_Studied, y = Exam_Score)) +
-  geom_point(aes(color = Gender), size = 3, alpha = 0.6) +
+  geom_point(aes(color = School_Type), size = 3, alpha = 0.6) +
   geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Relationship Between Hours Studied and Exam Score based on Gender") +
+  labs(title = "Relationship Between Hours Studied and Exam Score based on School Type") +
   theme_minimal()
 ```
 
@@ -77,7 +77,7 @@ summary(model1)
 
     **Significant Predictors**:
 
--   `Sleep_Hours` is not significant, suggesting that sleep does not have a major direct effect on `Exam_Score` in this model.
+-   `Sleep_Hours` is not statistically significant in this model, we cannot conclude it has a meaningful effect on Exam_Score based on this data.
 
 -   `Hours_Studied`: Each additional hour studied increases the `Exam_Score` by approximately 0.29 points.
 
@@ -117,15 +117,25 @@ summary(model3)
 
 -   `Attendance` continues to show a strong positive impact.
 
-## Comparing all 3 Linear Regression Models
+## Comparing all 3 Linear Regression Models using R\^2 and AIC
 
-```{r}
-anova(model1, model2, model3)
+```{r, echo = TRUE}
+summary(model1)$adj.r.squared
+
+summary(model2)$adj.r.squared
+
+summary(model3)$adj.r.squared
+
+AIC(model1)
+AIC(model2)
+AIC(model3)
 ```
 
-## Conclusion of Anova Model Comparison:
+## Conclusion of Model Comparison:
 
--   The transition from Model 1 to Model 3 (adding Motivation Level and removing Sleep Hours) improved model performance, supporting that Motivation is a more impactful predictor than Sleep Hours.
+-   Model 3 is the best model compared to the other two linear regressions. It has the highest Adjusted R\^2 of .58056 and lowest AIC of 30969, meaning it explains the most variance in Exam_Score while adjusting for the number of predictors and has the best balance between accuracy and simplicity.
+-   Model 3 also includes variables that are consistently significant.
+-   Model 2 performs significantly worse potentially due to Parental Involvement or School Type being weaker predictors in this dataset.
 
 ## Limitations
 
@@ -138,3 +148,7 @@ anova(model1, model2, model3)
 -   **Summary of Findings**: The primary factors influencing students' exam scores are hours studied, previous academic performance, and attendance. Motivation and parental involvement also play roles, but with varying effects depending on the level.
 
 -   **Actionable Insights**: Educational interventions should focus on encouraging students to attend classes regularly and invest time in studying. Additional support may be needed for students with low motivation or those with less parental involvement.
+
+## Sources
+
+<https://www.kaggle.com/datasets/lainguyn123/student-performance-factors/data>
